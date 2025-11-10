@@ -1,13 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    ignoreBuildErrors: true,  // Keeps ignoring TS errors (remove if you want strict checking)
+    ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,  // Already set—required for static export
+    unoptimized: true,
   },
-  output: 'export',  // NEW: Enables static site generation and export
-  trailingSlash: true,  // NEW: Adds trailing slashes to URLs (helps with static hosting)
+  output: 'export',  // For static site
+  trailingSlash: true,
+  // NEW: Allow cross-origin dev requests
+  allowedDevOrigins: ['192.168.1.12'],  // Add your IP or 'localhost' if needed
 };
 
 export default nextConfig;

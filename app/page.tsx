@@ -13,32 +13,70 @@ interface Quote {
 }
 
 export default function Home() {
-  const [quote, setQuote] = useState<Quote | null>(null)
-  const [isLoadingQuote, setIsLoadingQuote] = useState(false)
+  const [quote, setQuote] = useState<{
+    _id: string;
+    content: string;
+    author: string;
+  } | null>(null);
+  const [isLoadingQuote, setIsLoadingQuote] = useState(true);
+
 
   useEffect(() => {
     fetchQuote()
   }, [])
 
-  const fetchQuote = async () => {
-    setIsLoadingQuote(true)
+  const fetchQuote = async (forceNew = false) => {
+    setIsLoadingQuote(true);
+
     try {
-      const response = await fetch("/api/quote")
-      const data = await response.json()
-      console.log("[v0] Quote fetched successfully:", data)
-      setQuote(data)
+      // For "daily" quotes: Check localStorage for today's quote
+      const today = new Date().toDateString();
+      const cachedQuote = localStorage.getItem('dailyQuote');
+      const cachedDate = localStorage.getItem('quoteDate');
+
+      if (!forceNew && cachedQuote && cachedDate === today) {
+        // Use cached quote if it's from today and not forcing a new one
+        setQuote(JSON.parse(cachedQuote));
+        setIsLoadingQuote(false);
+        return;
+      }
+
+      // Fetch from API
+      const response = await fetch('https://api.quotable.io/random');
+      if (!response.ok) {
+        throw new Error('Failed to fetch quote from API');
+      }
+
+      const data = await response.json();
+      const newQuote = {
+        _id: data._id,
+        content: data.content,
+        author: data.author,
+      };
+
+      setQuote(newQuote);
+
+      // Cache the quote for the day
+      localStorage.setItem('dailyQuote', JSON.stringify(newQuote));
+      localStorage.setItem('quoteDate', today);
     } catch (error) {
-      console.error("[v0] Error fetching quote:", error)
-      // Fallback quote
+      console.error('Error fetching quote:', error);
+      // Fallback quote on error
       setQuote({
-        _id: "1",
-        content: "Stay strong — you are not alone. Together we fight cancer.",
-        author: "Cancer Awareness & Support",
-      })
+        _id: 'fallback',
+        content: 'Stay strong — you are not alone. Together we fight cancer.',
+        author: 'Cancer Awareness & Support',
+      });
     } finally {
-      setIsLoadingQuote(false)
+      setIsLoadingQuote(false);
     }
-  }
+  };
+
+  // Fetch quote on component mount (loads daily quote)
+  useEffect(() => {
+    fetchQuote();  // Loads cached or fetches new
+  }, []);
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -187,42 +225,42 @@ export default function Home() {
         </section>
 
         <section className="py-20 gradient-subtle border-y border-border">
-          <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12 space-y-2">
-              <h2 className="text-4xl font-bold text-foreground">Today's Inspirational Quote</h2>
-              <p className="text-muted-foreground">Words of hope and strength from our community</p>
-            </div>
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 space-y-2">
+            <h2 className="text-4xl font-bold text-foreground">Today's Inspirational Quote</h2>
+            <p className="text-muted-foreground">Words of hope and strength from our community</p>
+          </div>
 
-            <div className="bg-background p-10 rounded-2xl border-2 border-primary/20 hover:border-primary/40 transition-all shadow-xl animate-scale-in">
-              <blockquote className="text-center space-y-6">
-                {isLoadingQuote ? (
-                  <div className="flex justify-center items-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-2xl sm:text-3xl font-semibold italic text-foreground text-balance leading-relaxed">
-                      "{quote?.content || "Stay strong — you are not alone. Together we fight cancer."}"
-                    </p>
-                    <footer className="text-lg text-muted-foreground font-medium">
-                      — {quote?.author || "Cancer Awareness & Support"}
-                    </footer>
-                  </>
-                )}
-              </blockquote>
+          <div className="bg-background p-10 rounded-2xl border-2 border-primary/20 hover:border-primary/40 transition-all shadow-xl animate-scale-in">
+            <blockquote className="text-center space-y-6">
+              {isLoadingQuote ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-2xl sm:text-3xl font-semibold italic text-foreground text-balance leading-relaxed">
+                    "{quote?.content || "Stay strong — you are not alone. Together we fight cancer."}"
+                  </p>
+                  <footer className="text-lg text-muted-foreground font-medium">
+                    — {quote?.author || "Cancer Awareness & Support"}
+                  </footer>
+                </>
+              )}
+            </blockquote>
 
-              <div className="flex justify-center mt-8">
-                <button
-                  onClick={fetchQuote}
-                  disabled={isLoadingQuote}
-                  className="gradient-primary-purple text-white px-8 py-3 rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoadingQuote ? "Loading..." : "New Quote"}
-                </button>
-              </div>
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={() => fetchQuote(true)}  // Force a new random quote
+                disabled={isLoadingQuote}
+                className="gradient-primary-purple text-white px-8 py-3 rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoadingQuote ? "Loading..." : "New Quote"}
+              </button>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
         <section className="py-20 bg-background">
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
