@@ -1,15 +1,14 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  images: {
-    unoptimized: true,
-  },
-  output: 'export',  // For static site
-  trailingSlash: true,
-  // NEW: Allow cross-origin dev requests
-  allowedDevOrigins: ['192.168.1.12'],  // Add your IP or 'localhost' if needed
-};
+  /** @type {import('next').NextConfig} */
+  const nextConfig = {
+    typescript: {
+      ignoreBuildErrors: true,
+    },
+    images: {
+      unoptimized: true,
+    },
+    output: 'export',  // Enables static export
+    trailingSlash: true,
+  };
 
-export default nextConfig;
+  export default nextConfig;
+  
